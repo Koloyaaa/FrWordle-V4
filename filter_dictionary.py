@@ -61,8 +61,8 @@ def filter_dictionary(input_file, output_file):
     print(f'不合规词汇数: {invalid_count}')
 
 if __name__ == '__main__':
-    input_file = 'French-Dictionary-master/dictionary/dictionary.csv'
-    output_file = 'French-Dictionary-master/dictionary/dictionary_filtered.csv'
+    input_file = 'dictionary.csv'
+    output_file = 'dictionary_filtered.csv'
     filter_dictionary(input_file, output_file)
     
     # 打印被过滤掉的缩写词示例
