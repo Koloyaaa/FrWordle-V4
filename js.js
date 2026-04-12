@@ -372,7 +372,7 @@ function showDifficultyModal() {
 }
 
 function showVersion() {
-    showModal('Versions', `v3.2 — Interface minimaliste, accents, dictionnaire complet.<br>© DornGames`, false);
+    showModal('Versions', `V4 — Interface minimaliste, accents, dictionnaire complet.<br>© DornGames`, false);
 }
 
 function showLegal() {
