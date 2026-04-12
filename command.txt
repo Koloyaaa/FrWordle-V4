@@ -1,7 +1,6 @@
-我们修复了页脚链接无响应的问题，并提升了主色调 #5b3e7e 在界面中的出现频率。以下是修改后的 js.js 和 css.css 片段。
-1. 修复页脚链接（js.js 修改部分）
-原因：原脚本在 DOMContentLoaded 中绑定页脚事件，但 modal 相关变量在脚本顶部静态获取，若 DOM 结构有延迟则可能失效。现改为在事件绑定前重新获取 modal 元素，并添加控制台日志便于调试，同时确保 copyEmail 等函数正确调用。
-修改位置：js.js 末尾的初始化部分，替换页脚交互代码段。
+1. 修复 JS 错误（删除缺失的 versionBtn 监听）
+文件：js.js（位于初始化部分，约第 400 行附近）
+将以下代码：
 javascript
 ￼
 复制
@@ -9,46 +8,26 @@ javascript
 ￼
 下载
 ￼
-// ---------- 初始化 ----------
-window.addEventListener('DOMContentLoaded', () => {
-    // 重新获取模态框元素（确保最新）
-    modal = document.getElementById('globalModal');
-    modalTitle = document.getElementById('modalTitle');
-    modalBody = document.getElementById('modalBody');
-    modalExtra = document.getElementById('modalExtra');
-
-    wordLength = Math.floor(Math.random() * 5) + 4;
-    rebuildWordListAndTarget();
-    buildGrid();
-    currentGuessLetters = new Array(wordLength).fill('');
-    renderKeyboard();
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-    document.getElementById('introBtn').addEventListener('click', showIntroduction);
-    document.getElementById('difficultyBtn').addEventListener('click', showDifficultyModal);
-    document.getElementById('versionBtn').addEventListener('click', showVersion);
-    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-
-    // 页脚交互（确保元素存在且绑定正确）
-    const footerIntro = document.getElementById('footerIntroBtn');
-    const footerVersion = document.getElementById('footerVersionBtn');
-    const footerContact = document.getElementById('footerContactBtn');
-    const legalLink = document.getElementById('legalLink');
-
-    if (footerIntro) footerIntro.addEventListener('click', (e) => { e.preventDefault(); showIntroduction(); });
-    if (footerVersion) footerVersion.addEventListener('click', (e) => { e.preventDefault(); showVersion(); });
-    if (footerContact) footerContact.addEventListener('click', (e) => { e.preventDefault(); copyEmail(); });
-    if (legalLink) legalLink.addEventListener('click', (e) => { e.preventDefault(); showLegal(); });
-});
+document.getElementById('versionBtn').addEventListener('click', showVersion);
 ￼
 ￼
-2. 提升主色调出现率（css.css 新增样式）
-在保留原有设计的前提下，为主色调 #5b3e7e 增加更多视觉锚点：
-• 键盘按键 hover 时背景变为浅紫色
-• 网格格子的边框聚焦效果
-• 模态框确认按钮背景强化
-• 页脚版权链接 hover 效果
+删除或注释掉，因为 index.html 中已无此按钮。
+修改后该区域代码为：
+javascript
+￼
+复制
+￼
+￼
+下载
+￼
+document.getElementById('introBtn').addEventListener('click', showIntroduction);
+document.getElementById('difficultyBtn').addEventListener('click', showDifficultyModal);
+// 已移除 versionBtn 监听
+document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+￼
+￼
+2. 按键交互颜色改为明显的主题色
+文件：css.css（替换原有的 .key-active 样式）
 css
 ￼
 复制
@@ -56,39 +35,43 @@ css
 ￼
 下载
 ￼
-/* 键盘按键 hover 时使用主色调浅色 */
-.key:hover {
-    background: #ede9fe;  /* 极浅紫色 */
-    color: #5b3e7e;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(91, 62, 126, 0.1);
-}
-
-/* 网格行内格子获得焦点效果（提升精致感） */
-.tile:focus-within {
-    border-color: #5b3e7e;
-    box-shadow: 0 0 0 2px rgba(91, 62, 126, 0.2);
-}
-
-/* 模态框内的按钮（非主要）hover 也融入主色调 */
-.btn:hover {
-    background: #e2e8f0;
-    color: #5b3e7e;
-}
-
-/* 页脚版权链接 hover 增强 */
-.footer-copyright a:hover {
-    color: #5b3e7e !important;
-    text-decoration: underline;
-}
-
-/* 导航栏按钮激活状态（可选） */
-.nav-links button:active {
-    color: #5b3e7e;
-    transform: translateY(1px);
+/* 按键按下高亮 - 主题色明显 */
+.key-active {
+    background: #5b3e7e !important;
+    color: white !important;
+    transform: scale(0.96);
+    box-shadow: 0 0 0 2px rgba(91, 62, 126, 0.4);
+    transition: all 0.05s linear;
 }
 ￼
 ￼
-3. 完整修改说明
-• 页脚链接：现在每个链接点击都会正确弹出模态框（介绍、版本、联系复制邮箱、法律声明）。
-• 主色调：键盘按键、格子边框、按钮、页脚链接等交互元素均增加了 #5b3e7e 的视觉点缀，保持简约风格的同时提升品牌识别度。
+3. 模态框删除“Fermer”按钮，仅保留 X 关闭
+文件：js.js（修改 showModal 函数）
+javascript
+￼
+复制
+￼
+￼
+下载
+￼
+function showModal(title, content, withRestart = false) {
+    // 确保模态框元素存在
+    if (!modal) {
+        modal = document.getElementById('globalModal');
+        modalTitle = document.getElementById('modalTitle');
+        modalBody = document.getElementById('modalBody');
+        modalExtra = document.getElementById('modalExtra');
+    }
+    modalTitle.innerText = title;
+    modalBody.innerHTML = content;
+    modalExtra.innerHTML = '';
+    if (withRestart) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary';
+        btn.textContent = '🔄 Nouvelle partie';
+        btn.onclick = () => { closeModal(); resetFullGame(); };
+        modalExtra.appendChild(btn);
+    }
+    // 不再添加 "Fermer" 按钮，仅通过 X 按钮关闭
+    modal.classList.add('active');
+}

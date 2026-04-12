@@ -294,6 +294,12 @@ function handleKeyUp(e) {
 
 // ---------- 模态框 ----------
 function showModal(title, content, withRestart = false) {
+    if (!modal) {
+        modal = document.getElementById('globalModal');
+        modalTitle = document.getElementById('modalTitle');
+        modalBody = document.getElementById('modalBody');
+        modalExtra = document.getElementById('modalExtra');
+    }
     modalTitle.innerText = title;
     modalBody.innerHTML = content;
     modalExtra.innerHTML = '';
@@ -302,12 +308,6 @@ function showModal(title, content, withRestart = false) {
         btn.className = 'btn btn-primary';
         btn.textContent = '🔄 Nouvelle partie';
         btn.onclick = () => { closeModal(); resetFullGame(); };
-        modalExtra.appendChild(btn);
-    } else {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = 'Fermer';
-        btn.onclick = closeModal;
         modalExtra.appendChild(btn);
     }
     modal.classList.add('active');
@@ -410,7 +410,6 @@ window.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keyup', handleKeyUp);
     document.getElementById('introBtn').addEventListener('click', showIntroduction);
     document.getElementById('difficultyBtn').addEventListener('click', showDifficultyModal);
-    document.getElementById('versionBtn').addEventListener('click', showVersion);
     document.getElementById('closeModalBtn').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 

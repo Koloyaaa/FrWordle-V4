@@ -185,7 +185,7 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1rem;
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.08s linear;
@@ -221,11 +221,13 @@ body {
     transform: translateY(1px);
 }
 
-/* 按键按下高亮 */
+/* 按键按下高亮 - 主题色明显 */
 .key-active {
-    background: #cbd5e1 !important;
-    transform: scale(0.97);
-    box-shadow: none;
+    background: #5b3e7e !important;
+    color: white !important;
+    transform: scale(0.96);
+    box-shadow: 0 0 0 2px rgba(91, 62, 126, 0.4);
+    transition: all 0.05s linear;
 }
 
 /* 键盘颜色状态 */
