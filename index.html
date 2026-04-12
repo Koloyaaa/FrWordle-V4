@@ -1,245 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FrWordle - Wordle In French</title>
-    <link rel="icon" href="image/icon.png"/>
-    <script src="css/tailwind.css"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>FrWordle — Wordle français</title>
+    <link rel="icon" href="image/icon.png">
+    <style>
+        @import url('css.css');
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="nav-bar">
+            <div class="logo">FrWordle</div>
+            <div class="nav-links">
+                <button id="introBtn">📖 Introduction</button>
+                <button id="difficultyBtn">🎚️ Niveau</button>
+            </div>
+        </nav>
+
+        <div class="word-grid" id="wordGrid"></div>
+        <div class="keyboard" id="virtualKeyboard"></div>
+
+        <!-- 新页脚 (简约仿 footer 文件) -->
+        <footer class="app-footer">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <span class="name">FrWordle</span>
+                    <span class="version">V4-Beta</span>
+                    <div style="font-size:0.75rem; margin-top:4px;">Jeu éducatif français</div>
+                </div>
+                <div class="footer-links">
+                    <a href="#" id="footerIntroBtn">📖 Règles</a>
+                    <a href="#" id="footerVersionBtn">ℹ️ À propos</a>
+                    <a href="https://dorngames.gamer.gd" target="_blank" rel="noopener">🌐 Site officiel</a>
+                    <a href="#" id="footerContactBtn">📧 Contact</a>
+                </div>
+            </div>
+            <div class="footer-copyright">
+                © 2026 FrWordle · DornGames · Tous droits réservés
+                <br><a href="#" style="color:#5b3e7e; text-decoration:none;" id="legalLink">Mentions légales</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal -->
+    <div id="globalModal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="modal-close" id="closeModalBtn">&times;</button>
+            <h3 id="modalTitle"></h3>
+            <div id="modalBody"></div>
+            <div id="modalExtra"></div>
+        </div>
+    </div>
+
     <script src="js/frdic/BFSUFrancais_1.js"></script>
     <script src="js/frdic/BFSUFrancais_2.js"></script>
     <script src="js/frdic/BFSUFrancais_3.js"></script>
     <script src="js/frdic/BFSUFrancais_4.js"></script>
     <script src="js/frdic/BFSUFrancais_5.js"></script>
     <script src="js/frdic/Dictionnaire.js"></script>
-    <script src="js/index.js"></script>
-    <link href="css/all.min.css" rel="stylesheet">
-    <link href="css/index.css" rel="stylesheet">
-</head>
 
-<body>
-    <div id="uibg" style="display: none;">
-        <div id="ui">
-            <button id="quit" onclick="document.getElementById('uibg').style.display = 'none';">×</button>
-            <p id="ui_title">Choisissez la langue!</p>
-            <div id="ui_text">
-                <button>Français</button>
-                <button>中文</button>
-                <button>English</button>
-                <button>≈∠∃∤∀√</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 导航栏 -->
-    <nav class="bg-transparent py-4 px-8 flex justify-between items-center">
-        <div class="text-2xl font-bold">FrWordle</div>
-        <ul class="flex space-x-6">
-            <li><a href="#" 
-                class="hover:text-lavender" onclick="showUI('Introduction',introduction)">Introduction</a></li>
-            <li><a href="#" class="hover:text-lavender" onclick="showUI('Sélectionnez la difficulté',chooseLevel_text)">Niveau</a></li>
-            <li><a href="#" class="hover:text-lavender">Langue</a></li>
-        </ul>
-    </nav>
-
-    <div id="wordTable">
-        <div id="wordTableLine">
-            <div id="letterContainer"><p></p></div>
-        </div>
-    </div>
-
-    <div class="container mx-auto px-4 py-0 max-w-6xl" id="clavier_main">
-        <main class="space-y-8">
-            <!-- Textarea for input -->
-            <div class="relative">
-                <textarea style="display: none;"
-                    id="typing-area" 
-                    class="w-full h-40 p-4 bg-white rounded-xl shadow-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none transition-all"
-                    placeholder="Tapez ici pour voir les touches s'activer..."
-                ></textarea>
-                <div class="absolute right-4 bottom-4 text-sm text-gray-400" style="display: none;">
-                    <span id="char-count">0</span> caractères
-                </div>
-            </div>
-
-            <!-- Keyboard container -->
-            <div class="rounded-2xl shadow-xl p-6 transform transition-all duration-300 hover:shadow-2xl">
-                <div id="keyboard" class="grid grid-cols-1 gap-1">
-                    <!-- Second row -->
-                    <div class="flex justify-center gap-1" id="keyboard_id">
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="a">
-                            <span>A</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="z">
-                            <span>Z</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="e">
-                            <span>E</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="r">
-                            <span>R</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="t">
-                            <span>T</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="y">
-                            <span>Y</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="u">
-                            <span>U</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="i">
-                            <span>I</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="o">
-                            <span>O</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="p">
-                            <span>P</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="î">
-                            <span>Î</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="â">
-                            <span>Â</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ä">
-                            <span>Ä</span>
-                        </div>
-                        <div class="key key-special key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm" onclick="insertText(0,1)">
-                            <span>Suppr</span>
-                        </div>
-                    </div>
-
-                    <!-- Third row -->
-                    <div class="flex justify-center gap-1" id="keyboard_id">
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="q">
-                            <span>Q</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="s">
-                            <span>S</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="d">
-                            <span>D</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="f">
-                            <span>F</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="g">
-                            <span>G</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="h">
-                            <span>H</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="j">
-                            <span>J</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="k">
-                            <span>K</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="l">
-                            <span>L</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="m">
-                            <span>M</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ù">
-                            <span>Ù</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="û">
-                            <span>Û</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="œ">
-                            <span>Œ</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ô">
-                            <span>Ô</span>
-                        </div>
-                    </div>
-
-                    <!-- Fourth row -->
-                    <div class="flex justify-center gap-1" id="keyboard_id">
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="w">
-                            <span>W</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="x">
-                            <span>X</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="c">
-                            <span>C</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="v">
-                            <span>V</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="b">
-                            <span>B</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="n">
-                            <span>N</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="é">
-                            <span>É</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ê">
-                            <span>Ê</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="è">
-                            <span>È</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ç">
-                            <span>Ç</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ë">
-                            <span>Ë</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ï">
-                            <span>Ï</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ö">
-                            <span>Ö</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ü">
-                            <span>Ü</span>
-                        </div>
-                        <div class="key key-letter key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm key-data" data-key="ÿ">
-                            <span>Ÿ</span>
-                        </div>
-                        <div class="key key-special key-normal key-shadow w-12 h-12 rounded-lg flex items-center justify-center text-center text-sm" onclick="sumbit();">
-                            <span>Fixer</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Instructions -->
-            <div class="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg">
-                <h2 class="text-xl font-bold mb-4 flex items-center">
-                    <i class="fa fa-info-circle text-primary mr-2"></i>
-                    Comment utiliser
-                </h2>
-                <ul class="space-y-2 text-gray-700">
-                    <li class="flex items-start">
-                        <i class="fa fa-keyboard text-primary mt-1 mr-2"></i>
-                        <span>Appuyez sur les touches de votre clavier physique pour voir les touches correspondantes s'éclairer en bleu.</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="fa fa-mouse-pointer text-primary mt-1 mr-2"></i>
-                        <span>Cliquez sur les touches du clavier virtuel pour saisir du texte dans la zone de saisie.</span>
-                    </li>
-                    <li class="flex items-start">
-                        <i class="fa fa-language text-primary mt-1 mr-2"></i>
-                        <span>Le clavier suit la disposition standard du clavier français, avec des modifications.</span>
-                    </li>
-                </ul>
-            </div>
-        </main>
-    </div>
-    <!-- 页脚 -->
-    <footer class="bg-transparent py-4 px-8 text-center">
-        <p>&copy; 2025 FrWordle - All right reserved.</p>
-        <p><span onclick="showUI('Version',versionInfo_)">Ver.Demo</span>  |  Site réalisé par DornGames</p>
-    </footer>
+    <script src="js.js"></script>
 </body>
 
 </html>
