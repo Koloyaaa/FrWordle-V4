@@ -357,7 +357,6 @@ function showIntroduction() {
             • <span style="color:#e11d48">■ Rouge</span> : lettre présente mais mal placée.<br>
             • <span style="color:#9b59b6">■ Violet</span> : voyelle avec bon accent (mauvais emplacement).<br>
             • <span style="color:#94a3b8">■ Gris</span> : lettre absente.<br>
-            <strong>Niveaux :</strong> débutant → expert.<br>
             </div>`, false);
 }
 
