@@ -27,7 +27,6 @@
 - **HTML5**：语义化标记
 - **CSS3**：现代样式和布局
 - **JavaScript (ES6+)**：游戏逻辑和交互
-- **JSON**：词典数据格式
 
 ## 📁 项目结构
 
@@ -36,8 +35,7 @@ FrWordle-V4/
 ├── index.html          # 主页面
 ├── css.css            # 样式文件
 ├── js.js              # 游戏逻辑
-├── dictionary.json    # JSON 格式的词典
-├── gitUpdateCode.ps1  # Git 更新脚本
+├── dictionary.js      # 词典
 ├── image/
 │   └── icon.png       # 网站图标
 ├── LICENSE            # MIT 许可证
