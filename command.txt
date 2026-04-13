@@ -1,4 +1,31 @@
-1. 修改后的 index.html
+1. css.css —— 删除重复的 .key-active 定义
+问题：文件中存在两个 .key-active 规则，第二个会覆盖第一个的主题色效果。
+修改：删除第二个（无主题色的）规则。
+
+修改后的完整 css.css（仅保留第一个主题色 .key-active）：
+
+css
+/* 按键按下高亮 - 主题色明显 */
+.key-active {
+    background: #5b3e7e !important;
+    color: white !important;
+    transform: scale(0.96);
+    box-shadow: 0 0 0 2px rgba(91, 62, 126, 0.4);
+    transition: all 0.05s linear;
+}
+其余部分保持不变。
+
+2. index.html —— 移除难度按钮和旧词典脚本
+修改点：
+
+删除导航栏中的 <button id="difficultyBtn">🎚️ Niveau</button>
+
+删除所有 <script src="js/frdic/..."> 引用（不再需要 BFSU 和旧 Dictionnaire）
+
+添加 <script src="dictionary.json" type="application/json" id="dictionaryData"></script>（实际加载改用 fetch，此标签仅作占位，可删除，但保留无影响）
+
+修改后的 index.html：
+
 html
 <!DOCTYPE html>
 <html lang="fr">
@@ -57,13 +84,28 @@ html
         </div>
     </div>
 
-    <!-- 只加载单一 JSON 词典 -->
-    <script src="dictionary.json" type="application/json" id="dictionaryData"></script>
+    <!-- 词典 JSON 文件（由 Python 脚本生成） -->
     <script src="js.js"></script>
 </body>
 
 </html>
-2. 修改后的 js.js（精简版，无难度）
+3. js.js —— 完全重写词典加载逻辑，移除难度相关代码
+修改点：
+
+删除 LEVELS 常量、buildDictionaryFromLevel、setLevel、showDifficultyModal 等
+
+删除 currentLevel 变量
+
+添加 loadDictionary() 异步函数，使用 fetch('dictionary.json') 加载单词数组
+
+添加 selectRandomWord() 从词典中随机选择长度 4~8 的单词作为目标
+
+调整初始化流程：先加载词典，成功后自动开始游戏
+
+修复 resetFullGame 中重新选择目标词并重建网格的逻辑
+
+修改后的 js.js（完整文件）：
+
 javascript
 // ---------- 常量与辅助函数 ----------
 const KEYBOARD_ROWS = [
@@ -92,7 +134,7 @@ let currentRow = 0;
 let currentTilePos = 0;
 let gameActive = true;
 let win = false;
-let fullDictionary = [];      // 存储所有单词（小写）
+let fullDictionary = [];      // 所有单词（小写）
 let validationSet = new Set(); // 快速验证
 let keyState = new Map();
 let currentGuessLetters = [];
@@ -110,24 +152,24 @@ let modalExtra = document.getElementById('modalExtra');
 async function loadDictionary() {
     try {
         const response = await fetch('dictionary.json');
-        if (!response.ok) throw new Error('无法加载词典文件');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         const words = await response.json();
         fullDictionary = words.map(w => w.toLowerCase());
         validationSet = new Set(fullDictionary);
-        console.log(`词典加载成功，共 ${fullDictionary.length} 个单词`);
-        initGame(); // 加载完成后初始化游戏
+        console.log(`✅ Dictionnaire chargé : ${fullDictionary.length} mots`);
+        initGame();
     } catch (err) {
         console.error(err);
-        showModal('Erreur', 'Impossible de charger le dictionnaire. Vérifiez le fichier dictionary.json', false);
+        showModal('Erreur', 'Impossible de charger le dictionnaire. Vérifiez dictionary.json', false);
     }
 }
 
-// 随机选择目标词（长度随机 4-8）
+// 随机选择目标词（长度 4-8）
 function selectRandomWord() {
-    wordLength = Math.floor(Math.random() * 5) + 4; // 4-8
+    wordLength = Math.floor(Math.random() * 5) + 4; // 4,5,6,7,8
     const candidates = fullDictionary.filter(w => w.length === wordLength);
     if (candidates.length === 0) {
-        // 回退：从所有词中随机选一个（概率极低）
+        // 回退：从所有词中随机选一个（理论上不会发生）
         targetWord = fullDictionary[Math.floor(Math.random() * fullDictionary.length)];
         wordLength = targetWord.length;
     } else {
@@ -137,6 +179,7 @@ function selectRandomWord() {
 }
 
 function initGame(resetGame = true) {
+    if (fullDictionary.length === 0) return;
     selectRandomWord();
     if (resetGame) {
         currentRow = 0;
@@ -413,7 +456,7 @@ function showIntroduction() {
         • <span style="color:#e11d48">■ Rouge</span> : lettre présente mais mal placée.<br>
         • <span style="color:#9b59b6">■ Violet</span> : voyelle avec bon accent (mauvais emplacement).<br>
         • <span style="color:#94a3b8">■ Gris</span> : lettre absente.<br>
-        <strong>Dictionnaire :</strong> plus de ${fullDictionary.length} mots français filtrés.<br>
+        <strong>Dictionnaire :</strong> ${fullDictionary.length} mots français filtrés.<br>
         </div>`, false);
 }
 
@@ -446,7 +489,7 @@ window.addEventListener('DOMContentLoaded', () => {
     modalBody = document.getElementById('modalBody');
     modalExtra = document.getElementById('modalExtra');
 
-    loadDictionary(); // 异步加载词典，完成后自动 initGame
+    loadDictionary(); // 异步加载词典，成功后自动 initGame
 
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
@@ -467,86 +510,3 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 window.resetFullGame = resetFullGame;
-3. 新增 Python 脚本 prepare_dictionary.py
-python
-import re
-import csv
-import json
-
-# ---------- 1. 过滤逻辑（复用自 filter_dictionary.py） ----------
-def is_valid_french_word(word):
-    """检查单词是否只包含法文拉丁字母（包括重音符号）且不是缩写词"""
-    if not word:
-        return False
-    pattern = r'^[a-zA-ZàâäèéêëîïôöùûüÿæœçÀÂÄÈÉÊËÎÏÔÖÙÛÜŸÆŒÇ]+$'
-    if not re.match(pattern, word):
-        return False
-    if word.isupper():
-        return False
-    if len(word) > 2:
-        has_upper_sequence = False
-        upper_count = 0
-        for char in word:
-            if char.isupper():
-                upper_count += 1
-                if upper_count >= 2:
-                    has_upper_sequence = True
-                    break
-            else:
-                upper_count = 0
-        if has_upper_sequence and not word.isupper():
-            return False
-    return True
-
-def filter_dictionary(input_csv, output_csv):
-    valid_words = []
-    invalid_count = 0
-    with open(input_csv, 'r', encoding='utf-8') as f:
-        for line in f:
-            word = line.strip()
-            if is_valid_french_word(word):
-                valid_words.append(word)
-            else:
-                invalid_count += 1
-    with open(output_csv, 'w', encoding='utf-8') as f:
-        for word in valid_words:
-            f.write(word + '\n')
-    print(f'原始词汇数: {len(valid_words) + invalid_count}')
-    print(f'合规词汇数: {len(valid_words)}')
-    print(f'不合规词汇数: {invalid_count}')
-    return valid_words
-
-# ---------- 2. CSV 转 JSON（小写） ----------
-def csv_to_json(csv_path, json_path):
-    words = []
-    with open(csv_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            word = line.strip().lower()
-            if word:
-                words.append(word)
-    # 去重并排序
-    words = sorted(set(words))
-    with open(json_path, 'w', encoding='utf-8') as f:
-        json.dump(words, f, ensure_ascii=False, indent=2)
-    print(f'JSON 已生成，共 {len(words)} 个单词，保存至 {json_path}')
-
-# ---------- 3. 一键执行 ----------
-if __name__ == '__main__':
-    # 第一步：过滤原始词典（若已有 dictionary_filtered.csv 可跳过，但为了安全仍执行）
-    print("=== 开始过滤词典 ===")
-    filter_dictionary('dictionary.csv', 'dictionary_filtered.csv')
-    
-    # 第二步：转换为 JSON
-    print("\n=== 开始转换为 JSON ===")
-    csv_to_json('dictionary_filtered.csv', 'dictionary.json')
-    
-    print("\n✅ 全部完成！请将 dictionary.json 放在与 index.html 相同的目录下。")
-使用方法：
-
-确保 dictionary.csv（原始词典）位于脚本同一目录下
-
-运行 python prepare_dictionary.py
-
-脚本会自动生成 dictionary_filtered.csv 和 dictionary.json
-
-将 dictionary.json 放置在网站的根目录（与 index.html 同级）

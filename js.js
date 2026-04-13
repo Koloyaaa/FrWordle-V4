@@ -1,12 +1,4 @@
 // ---------- 常量与辅助函数 ----------
-const regexWord = /[a-zA-ZàâäèéêëîïôöùûüÿæœçÀÂÄÈÉÊËÎÏÔÖÙÛÜŸÆŒÇ]+(?!\S)/g;
-const LEVELS = {
-    1: { name: 'Bleu (débutant)', sources: ['BFSUFrancais_1'] },
-    2: { name: 'DELF-B', sources: ['BFSUFrancais_1', 'BFSUFrancais_2', 'BFSUFrancais_3'] },
-    3: { name: 'DELF-B(+)', sources: ['BFSUFrancais_1', 'BFSUFrancais_2', 'BFSUFrancais_3', 'BFSUFrancais_4'] },
-    4: { name: 'DALF-C', sources: ['BFSUFrancais_1', 'BFSUFrancais_2', 'BFSUFrancais_3', 'BFSUFrancais_4', 'BFSUFrancais_5'] },
-    5: { name: 'DALF-C(+)', sources: ['dictionnaire'] }
-};
 const KEYBOARD_ROWS = [
     ['a', 'z', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'î', 'â', 'ä'],
     ['q', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'ù', 'û', 'œ', 'ô'],
@@ -27,14 +19,14 @@ function isAccentEquivalent(aimChar, guessChar) {
 }
 
 // ---------- 游戏状态 ----------
-let currentLevel = 4;
 let wordLength = 5;
 let targetWord = '';
 let currentRow = 0;
 let currentTilePos = 0;
 let gameActive = true;
 let win = false;
-let validationDictionary = [];
+let fullDictionary = [];
+let validationSet = new Set();
 let keyState = new Map();
 let currentGuessLetters = [];
 let submittedHistory = [];
@@ -47,35 +39,49 @@ let modalTitle = document.getElementById('modalTitle');
 let modalBody = document.getElementById('modalBody');
 let modalExtra = document.getElementById('modalExtra');
 
-// ---------- 字典工具 ----------
-function buildDictionaryFromLevel(level) {
-    let combined = [];
-    for (let src of LEVELS[level].sources) {
-        if (src === 'BFSUFrancais_1') combined = combined.concat(window.BFSUFrancais_1 || []);
-        else if (src === 'BFSUFrancais_2') combined = combined.concat(window.BFSUFrancais_2 || []);
-        else if (src === 'BFSUFrancais_3') combined = combined.concat(window.BFSUFrancais_3 || []);
-        else if (src === 'BFSUFrancais_4') combined = combined.concat(window.BFSUFrancais_4 || []);
-        else if (src === 'BFSUFrancais_5') combined = combined.concat(window.BFSUFrancais_5 || []);
-        else if (src === 'dictionnaire') combined = combined.concat(window.dictionnaire || []);
+// ---------- 加载词典 ----------
+async function loadDictionary() {
+    try {
+        const response = await fetch('dictionary.json');
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const words = await response.json();
+        fullDictionary = words.map(w => w.toLowerCase());
+        validationSet = new Set(fullDictionary);
+        console.log(`✅ Dictionnaire chargé : ${fullDictionary.length} mots`);
+        initGame();
+    } catch (err) {
+        console.error(err);
+        showModal('Erreur', 'Impossible de charger le dictionnaire. Vérifiez dictionary.json', false);
     }
-    const textBlob = combined.join(' ');
-    const words = [...new Set(textBlob.match(regexWord) || [])];
-    return words.map(w => w.toLowerCase());
 }
 
-function rebuildWordListAndTarget() {
-    const fullDict = buildDictionaryFromLevel(currentLevel);
-    validationDictionary = [...fullDict];
-    const filtered = fullDict.filter(w => w.length === wordLength);
-    if (filtered.length === 0) {
-        targetWord = 'motif';
-        wordLength = 5;
-        const fallback = fullDict.filter(w => w.length === 5);
-        targetWord = (fallback.length ? fallback[0] : 'amour');
+// 随机选择目标词（长度 4-8）
+function selectRandomWord() {
+    wordLength = Math.floor(Math.random() * 5) + 4;
+    const candidates = fullDictionary.filter(w => w.length === wordLength);
+    if (candidates.length === 0) {
+        targetWord = fullDictionary[Math.floor(Math.random() * fullDictionary.length)];
+        wordLength = targetWord.length;
     } else {
-        targetWord = filtered[Math.floor(Math.random() * filtered.length)];
+        targetWord = candidates[Math.floor(Math.random() * candidates.length)];
     }
-    console.log(`[DEBUG] niveau ${currentLevel}, longueur=${wordLength}, cible=${targetWord}`);
+    console.log(`[DEBUG] longueur=${wordLength}, cible=${targetWord}`);
+}
+
+function initGame(resetGame = true) {
+    if (fullDictionary.length === 0) return;
+    selectRandomWord();
+    if (resetGame) {
+        currentRow = 0;
+        currentTilePos = 0;
+        gameActive = true;
+        win = false;
+        keyState.clear();
+        currentGuessLetters = new Array(wordLength).fill('');
+        submittedHistory = [];
+        buildGrid();
+        renderKeyboard();
+    }
 }
 
 // ---------- 网格构建（一次性构建6行） ----------
@@ -130,7 +136,7 @@ function submitGuess() {
         showModal('Mot incomplet', `Veuillez saisir ${wordLength} lettres.`, false);
         return;
     }
-    if (!validationDictionary.includes(guess.toLowerCase())) {
+    if (!validationSet.has(guess.toLowerCase())) {
         showModal('Mot invalide', `"${guess}" n'existe pas dans le dictionnaire.`, false);
         return;
     }
@@ -323,66 +329,39 @@ function resetFullGame() {
     gameActive = true;
     currentGuessLetters = new Array(wordLength).fill('');
     keyState.clear();
-    wordLength = Math.floor(Math.random() * 5) + 4;
-    rebuildWordListAndTarget();
+    selectRandomWord();
     buildGrid();
     for (let i = 0; i < wordLength; i++) updateTileLetter(currentRow, i, '');
     renderKeyboard();
     renderKeyboardColors();
 }
 
-function setLevel(levelId) {
-    currentLevel = levelId;
-    submittedHistory = [];
-    currentRow = 0;
-    currentTilePos = 0;
-    win = false;
-    gameActive = true;
-    currentGuessLetters = [];
-    keyState.clear();
-    wordLength = Math.floor(Math.random() * 5) + 4;
-    rebuildWordListAndTarget();
-    buildGrid();
-    renderKeyboard();
-    closeModal();
-}
-
-// 介绍/难度/版本
+// 介绍 / 版本 / 法律声明
 function showIntroduction() {
     showModal('📖 FrWordle', `
-            <div style="text-align:left; font-size:0.9rem">
-            <strong>Règles :</strong><br>
-            • Devinez le mot en 6 essais.<br>
-            • <span style="color:#3b82f6">■ Bleu</span> : lettre correcte et bien placée.<br>
-            • <span style="color:#e11d48">■ Rouge</span> : lettre présente mais mal placée.<br>
-            • <span style="color:#9b59b6">■ Violet</span> : voyelle avec bon accent (mauvais emplacement).<br>
-            • <span style="color:#94a3b8">■ Gris</span> : lettre absente.<br>
-            </div>`, false);
-}
-
-function showDifficultyModal() {
-    const btns = Object.keys(LEVELS).map(lvl => `<button class="btn" data-level="${lvl}">${LEVELS[lvl].name}</button>`).join('');
-    showModal('🎚️ Niveau', `<div class="btn-group" id="difficultyChoices">${btns}</div><p style="font-size:0.8rem">Actuel : ${LEVELS[currentLevel].name}</p>`, false);
-    setTimeout(() => {
-        document.querySelectorAll('[data-level]').forEach(btn => {
-            btn.addEventListener('click', (e) => setLevel(parseInt(e.target.getAttribute('data-level'))));
-        });
-    }, 10);
+        <div style="text-align:left; font-size:0.9rem">
+        <strong>Règles :</strong><br>
+        • Devinez le mot en 6 essais.<br>
+        • <span style="color:#3b82f6">■ Bleu</span> : lettre correcte et bien placée.<br>
+        • <span style="color:#e11d48">■ Rouge</span> : lettre présente mais mal placée.<br>
+        • <span style="color:#9b59b6">■ Violet</span> : voyelle avec bon accent (mauvais emplacement).<br>
+        • <span style="color:#94a3b8">■ Gris</span> : lettre absente.<br>
+        <strong>Dictionnaire :</strong> ${fullDictionary.length} mots français filtrés.<br>
+        </div>`, false);
 }
 
 function showVersion() {
-    showModal('Versions', `V4 — Interface minimaliste, accents, dictionnaire complet.<br>© DornGames`, false);
+    showModal('Versions', `V4 — Interface minimaliste, accents, dictionnaire unique.<br>© DornGames`, false);
 }
 
 function showLegal() {
     showModal('Mentions légales', `
-                <div style="text-align:left; font-size:0.85rem">
-                <strong>FrWordle</strong> — jeu éducatif indépendant.<br>
-                Dictionnaires : BFSU Français 1~5 + Dictionnaire étendu (source libre).<br>
-                Conçu par DornGames. Aucune donnée personnelle collectée.<br>
-                Pour toute question : dorngames@163.com
-                </div>
-            `, false);
+        <div style="text-align:left; font-size:0.85rem">
+        <strong>FrWordle</strong> — jeu éducatif indépendant.<br>
+        Dictionnaire filtré (source libre).<br>
+        Conçu par DornGames. Aucune donnée personnelle collectée.<br>
+        Contact : dorngames@163.com
+        </div>`, false);
 }
 
 function copyEmail() {
@@ -400,19 +379,14 @@ window.addEventListener('DOMContentLoaded', () => {
     modalBody = document.getElementById('modalBody');
     modalExtra = document.getElementById('modalExtra');
 
-    wordLength = Math.floor(Math.random() * 5) + 4;
-    rebuildWordListAndTarget();
-    buildGrid();
-    currentGuessLetters = new Array(wordLength).fill('');
-    renderKeyboard();
+    loadDictionary();
+
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
     document.getElementById('introBtn').addEventListener('click', showIntroduction);
-    document.getElementById('difficultyBtn').addEventListener('click', showDifficultyModal);
     document.getElementById('closeModalBtn').addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
-    // 页脚交互（确保元素存在且绑定正确）
     const footerIntro = document.getElementById('footerIntroBtn');
     const footerVersion = document.getElementById('footerVersionBtn');
     const footerContact = document.getElementById('footerContactBtn');

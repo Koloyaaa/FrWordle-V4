@@ -22,28 +22,18 @@ git add .
 # 7. 检查是否有更改需要提交
 if (git status --porcelain) {
     git commit -m "概述
-已成功创建 README.md 项目文档。
+代码清理与重构。
 
 新增文件列表
-- README.md - 新增项目文档
-  - 项目介绍和特性说明
-  - 游戏规则和使用方法
-  - 技术栈和项目结构
-  - 词典处理指南
-  - 贡献指南和联系方式
+- 无
+
 修改文件列表
-- README.md - 更新项目文档（从空文件更新为完整文档）
+- css.css - 删除重复的.key-active定义，优化CSS结构
+- index.html - 移除难度按钮和旧词典脚本引用
+- js.js - 重写词典加载逻辑，使用JSON格式和fetch API
+
 删除文件列表
-- css/all.min.css - 删除（不再使用）
-- css/index.css - 删除（不再使用）
-- css/tailwind.css - 删除（不再使用）
-- js/frdic/BFSUFrancais_1.js - 删除（不再使用）
-- js/frdic/BFSUFrancais_2.js - 删除（不再使用）
-- js/frdic/BFSUFrancais_3.js - 删除（不再使用）
-- js/frdic/BFSUFrancais_4.js - 删除（不再使用）
-- js/frdic/BFSUFrancais_5.js - 删除（不再使用）
-- js/frdic/Dictionnaire.js - 删除（不再使用）
-- js/index.js - 删除（不再使用）"
+- 无"
 }
 
 # 8. 推送到远程仓库

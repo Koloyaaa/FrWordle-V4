@@ -255,13 +255,6 @@ body {
     opacity: 0.7;
 }
 
-/* 按键按下高亮 */
-.key-active {
-    background: #cbd5e1 !important;
-    transform: scale(0.97);
-    box-shadow: none;
-}
-
 /* ----- 模态框 ----- */
 .modal-overlay {
     position: fixed;
