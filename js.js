@@ -40,18 +40,15 @@ let modalBody = document.getElementById('modalBody');
 let modalExtra = document.getElementById('modalExtra');
 
 // ---------- 加载词典 ----------
-async function loadDictionary() {
-    try {
-        const response = await fetch('dictionary.json');
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const words = await response.json();
-        fullDictionary = words.map(w => w.toLowerCase());
+function loadDictionary() {
+    if (typeof dic !== 'undefined' && Array.isArray(dic)) {
+        fullDictionary = dic.map(w => w.toLowerCase());
         validationSet = new Set(fullDictionary);
         console.log(`✅ Dictionnaire chargé : ${fullDictionary.length} mots`);
         initGame();
-    } catch (err) {
-        console.error(err);
-        showModal('Erreur', 'Impossible de charger le dictionnaire. Vérifiez dictionary.json', false);
+    } else {
+        console.error('❌ Erreur : la variable dic n\'est pas définie ou n\'est pas un tableau');
+        showModal('Erreur', 'Impossible de charger le dictionnaire. Vérifiez dictionary.js', false);
     }
 }
 
@@ -128,7 +125,7 @@ function applyRowColorsFromResult(rowIndex, resultColors, guessWord) {
     renderKeyboardColors();
 }
 
-// 提交猜测
+// 修复后的提交猜测逻辑 —— 正确处理重复字母计数
 function submitGuess() {
     if (!gameActive || win) return;
     let guess = currentGuessLetters.join('');
@@ -141,34 +138,59 @@ function submitGuess() {
         return;
     }
 
-    let result = new Array(wordLength).fill('absent');
-    let targetArr = targetWord.split('');
-    let guessArr = guess.split('');
+    const targetArr = targetWord.split('');
+    const guessArr = guess.split('');
+    const result = new Array(wordLength).fill('absent');
+
+    // 第一步：标记正确位置 (correct)，并记录哪些位置已被正确匹配
     for (let i = 0; i < wordLength; i++) {
         if (guessArr[i] === targetArr[i]) {
             result[i] = 'correct';
-            targetArr[i] = null;
+            targetArr[i] = null;      // 占位，表示已使用
             guessArr[i] = null;
         }
     }
+
+    // 构建剩余字母计数表 (排除已正确匹配的字母)
+    const remainingCount = new Map();
     for (let i = 0; i < wordLength; i++) {
-        if (guessArr[i] === null) continue;
-        let foundIndex = targetArr.indexOf(guessArr[i]);
-        if (foundIndex !== -1) {
-            result[i] = 'present';
-            targetArr[foundIndex] = null;
-        } else {
-            let isAccent = false;
-            for (let j = 0; j < wordLength; j++) {
-                if (targetArr[j] && isAccentEquivalent(targetArr[j], guessArr[i])) {
-                    isAccent = true;
-                    targetArr[j] = null;
-                    break;
-                }
-            }
-            result[i] = isAccent ? 'accent-mismatch' : 'absent';
+        const ch = targetArr[i];
+        if (ch !== null) {
+            remainingCount.set(ch, (remainingCount.get(ch) || 0) + 1);
         }
     }
+
+    // 第二步：标记存在但位置错误 (present) —— 精确字母匹配
+    for (let i = 0; i < wordLength; i++) {
+        const ch = guessArr[i];
+        if (ch === null) continue;           // 已经是正确位置，跳过
+        if (remainingCount.has(ch) && remainingCount.get(ch) > 0) {
+            result[i] = 'present';
+            remainingCount.set(ch, remainingCount.get(ch) - 1);
+            guessArr[i] = null;              // 标记已处理
+        }
+    }
+
+    // 第三步：处理重音等价 (accent-mismatch)
+    for (let i = 0; i < wordLength; i++) {
+        const ch = guessArr[i];
+        if (ch === null) continue;           // 已正确或已标记为 present，跳过
+        // 寻找是否有重音等价字母剩余
+        let found = false;
+        for (let [targetCh, count] of remainingCount.entries()) {
+            if (count > 0 && isAccentEquivalent(targetCh, ch)) {
+                result[i] = 'accent-mismatch';
+                remainingCount.set(targetCh, count - 1);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            result[i] = 'absent';
+        }
+    }
+
+    // 应用颜色到网格并更新键盘状态
     applyRowColorsFromResult(currentRow, result, guess);
     submittedHistory.push({ guess, target: targetWord });
 
