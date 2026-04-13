@@ -28,7 +28,9 @@ if (git status --porcelain) {
 - 无
 
 修改文件列表
+- command.txt - 更新任务说明文档
 - css.css - 删除重复的.key-active定义，优化CSS结构
+- gitUpdateCode.ps1 - 更新Git提交脚本
 - index.html - 移除难度按钮和旧词典脚本引用
 - js.js - 重写词典加载逻辑，使用JSON格式和fetch API
 
